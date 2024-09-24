@@ -75,4 +75,32 @@ Random.seed!(666)
 aux1 = prepare_data(X, y; dims=1)
 Random.seed!(666)
 aux2 = prepare_data(X', y; dims=2)
-norm(aux1[1] - aux2[1]') # => 1.4512633279159294e-14
+# norm(aux1[1] - aux2[1]') # => 1.4512633279159294e-14
+
+# Create NN with 3 layers
+struct SimpleNet{T<:Real}
+    W1::Matrix{T}
+    b1::Vector{T}
+    W2::Matrix{T}
+    b2::Vector{T}
+end
+
+# Constructor
+SimpleNet(n1, n2, n3) = SimpleNet(randn(n2, n1), randn(n2), randn(n3, n2), randn(n3))
+
+Random.seed!(666)
+
+# size(X_train, 1) - number of rows in X_train
+m = SimpleNet(size(X_train, 1), 5, size(y_train, 1))
+
+# m is a SimpleNet x is an argument
+# z1 = W1*x .+ b1
+function (m::SimpleNet)(x) 
+    z1 = m.W1*x .+ m.b1 # layer 1
+    a1 = max.(z1, 0) # RELU
+    z2 = m.W2*a1 .+ m.b2 # layer 2
+    p = exp.(z2) ./ sum(exp.(z2), dims=1) # softmax
+    return p
+end
+
+m(X_train[:,1:2])
