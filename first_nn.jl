@@ -104,3 +104,57 @@ function (m::SimpleNet)(x)
 end
 
 m(X_train[:,1:2])
+
+function grad(m::SimpleNet, x::AbstractVector, y; ϵ=1e-10)
+    z1 = m.W1*x .+ m.b1
+    a1 = max.(z1, 0)
+    z2 = m.W2*a1 .+ m.b2
+    a2 = exp.(z2) ./ sum(exp.(z2), dims=1)
+    l = -sum(y .* log.(a2 .+ ϵ)) # loss function
+
+    e_z2 = exp.(z2)
+    l_part = (- e_z2 * e_z2' + Diagonal(e_z2 .* sum(e_z2))) / sum(e_z2)^2
+
+    l_a2 = - y ./ (a2 .+ ϵ)
+    l_z2 = l_part * l_a2
+    l_a1 = m.W2' * l_z2
+    l_z1 = l_a1 .* (a1 .> 0)
+    l_x = m.W1' * l_z1
+
+    l_W2 = l_z2 * a1'
+    l_b2 = l_z2
+    l_W1 = l_z1 * x'
+    l_b1 = l_z1
+
+    return l, l_W1, l_b1, l_W2, l_b2
+end
+
+# compute gradients of multiple samples
+g_all = [grad(m, X_train[:,k], y_train[:,k]) for k in 1:size(X_train,2)]
+typeof(g_all)
+
+# mean over all samples
+mean_tuple(d::AbstractArray{<:Tuple}) = Tuple([mean([d[k][i] for k in 1:length(d)]) for i in 1:length(d[1])])
+
+function first_train()
+    α = 1e-1
+    max_iter = 200
+    L = zeros(max_iter)
+    for iter in 1:max_iter
+        grad_all = [grad(m, X_train[:,k], y_train[:,k]) for k in 1:size(X_train,2)]
+        grad_mean = mean_tuple(grad_all)
+
+        L[iter] = grad_mean[1]
+
+        m.W1 .-= α*grad_mean[2]
+        m.b1 .-= α*grad_mean[3]
+        m.W2 .-= α*grad_mean[4]
+        m.b2 .-= α*grad_mean[5]
+    end
+end
+
+predict(X) = m(X)
+accuracy(X, y) = mean(onecold(predict(X), classes) .== onecold(y, classes))
+
+println("Train accuracy = ", accuracy(X_train, y_train))
+println("Test accuracy = ", accuracy(X_test, y_test))
