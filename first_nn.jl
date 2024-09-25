@@ -3,15 +3,15 @@ using Random
 using Statistics
 using LinearAlgebra
 
-function split(data, labels; dims=1)
-    n = length(labels)
-    size(data, dims) == n || throw(DimensionMismatch("..."))
+function split(X, y::AbstractVector; dims=1, ratio_train=0.8, kwargs...)
+    n = length(y)
+    size(X, dims) == n || throw(DimensionMismatch("..."))
 
-    ratio_train = 0.8
     n_train = round(Int, ratio_train*n) # 0.8 * number of "pictures"
-    i_rand = randperm(n) # construct a random permutation of length n
+    i_rand = randperm(n)  # construct a random permutation of length n
     i_train = i_rand[1:n_train] # cut the index array by the number n_train
     i_test = i_rand[n_train+1:end]
+
     return selectdim(X, dims, i_train), y[i_train], selectdim(X, dims, i_test), y[i_test]
 end
 
@@ -60,7 +60,6 @@ function prepare_data(X, y; do_normal=true, do_onehot=true, kwargs...)
 
     return X_train, y_train, X_test, y_test, classes
 end
-
 
 Random.seed!(666)
 
@@ -156,5 +155,5 @@ end
 predict(X) = m(X)
 accuracy(X, y) = mean(onecold(predict(X), classes) .== onecold(y, classes))
 
-println("Train accuracy = ", accuracy(X_train, y_train))
-println("Test accuracy = ", accuracy(X_test, y_test))
+# println("Train accuracy = ", accuracy(X_train, y_train))
+# println("Test accuracy = ", accuracy(X_test, y_test))
