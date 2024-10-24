@@ -52,7 +52,6 @@ for i in 1:max_iter
     acc_test[i] = accuracy(X_test, y_test)
 end
 
-
 # To see how the accuracy on the testing set keeps increasing as the training progresses.
 using Plots
 plot(acc_train, xlabel="Iteration", ylabel="Accuracy", label="train", ylim=(-0.01,1.01))
